@@ -1,5 +1,11 @@
 # Compiled class file
 *.class
+target/
+
+# Intellij files and folders #
+#############################
+*.iml
+.idea/
 
 # Log file
 *.log
