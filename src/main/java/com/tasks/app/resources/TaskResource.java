@@ -1,10 +1,8 @@
 package com.tasks.app.resources;
 
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import com.tasks.app.db.TaskDAO;
 import com.tasks.app.entity.Task;
-import io.dropwizard.hibernate.UnitOfWork;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
@@ -12,18 +10,19 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Path("/tasks")
-public class TaskResource  {
-
-   public TaskDAO taskDAO;
+public class TaskResource {
 
     @Inject
-    public TaskResource(TaskDAO taskDAO) {
-        this.taskDAO = taskDAO;
-    }
+    public TaskDAO taskDAO;
+
+  //  @Inject
+   // public TaskResource(TaskDAO taskDAO) {
+     //   this.taskDAO = taskDAO;
+ //   }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-      public List<Task> listOfTasks() {
+    public List<Task> listOfTasks() {
         return taskDAO.getAllTasks();
     }
 
@@ -36,10 +35,12 @@ public class TaskResource  {
 
     @POST
     public void insertTask(Task task) {
-        if(task.getId().isEmpty()){
+        if (task.getId().isEmpty()) {
             task.setId(UUID.randomUUID().toString());
+            taskDAO.insertTask(task);
+        } else {
+            taskDAO.updateTask(task, task.getId());
         }
-        taskDAO.insertTask(task);
     }
 
     @PUT

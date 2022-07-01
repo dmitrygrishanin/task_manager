@@ -6,20 +6,18 @@ import io.dropwizard.testing.junit5.DropwizardExtensionsSupport;
 import io.dropwizard.testing.junit5.ResourceExtension;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
-
 import javax.ws.rs.core.Response;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Optional;
-
 import static org.mockito.Mockito.*;
 
 @ExtendWith(DropwizardExtensionsSupport.class)
 public class TaskResourceTest {
     private static final TaskDAO DAO = mock(TaskDAO.class);
     private static final ResourceExtension EXT = ResourceExtension.builder()
-            .addResource(new TaskResource(DAO))
+            .addResource(new TaskResource())
             .build();
     private Task task;
 
