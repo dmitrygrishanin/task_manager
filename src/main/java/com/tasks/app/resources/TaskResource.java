@@ -15,11 +15,6 @@ public class TaskResource {
     @Inject
     public TaskDAO taskDAO;
 
-  //  @Inject
-   // public TaskResource(TaskDAO taskDAO) {
-     //   this.taskDAO = taskDAO;
- //   }
-
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public List<Task> listOfTasks() {

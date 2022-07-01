@@ -20,11 +20,6 @@ public class TaskManagerApplication extends Application<Configuration> {
 
     @Override
     public void initialize(final Bootstrap<Configuration> bootstrap) {
-      /*  bootstrap.setConfigurationSourceProvider(
-                new SubstitutingSourceProvider(bootstrap.getConfigurationSourceProvider(),
-                        new EnvironmentVariableSubstitutor(false)
-                )
-        ); */
         bootstrap.addBundle(GuiceBundle.builder()
                 .enableAutoConfig(getClass().getPackage().getName())
                 .modules(new AppModule())
