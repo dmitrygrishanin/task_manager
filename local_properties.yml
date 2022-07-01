@@ -6,7 +6,7 @@ database:
   user: postgres
 
   # the password
-  password: TyAW10LpRteg
+  password: pass
 
   # the JDBC URL
   url: jdbc:postgresql://localhost:5432/postgres
