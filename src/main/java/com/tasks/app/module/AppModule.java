@@ -1,6 +1,5 @@
 package com.tasks.app.module;
 
-
 import com.google.inject.*;
 import com.tasks.app.Configuration;
 import com.tasks.app.db.TaskDAO;
@@ -26,5 +25,4 @@ public class AppModule extends AbstractModule  {
     public TaskDAO providesTaskDAO(Jdbi db) {
         return db.onDemand(TaskDAO.class);
     }
-
-}
+    }

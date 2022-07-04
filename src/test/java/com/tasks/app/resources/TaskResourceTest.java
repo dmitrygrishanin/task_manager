@@ -17,7 +17,7 @@ import static org.mockito.Mockito.*;
 public class TaskResourceTest {
     private static final TaskDAO DAO = mock(TaskDAO.class);
     private static final ResourceExtension EXT = ResourceExtension.builder()
-            .addResource(new TaskResource())
+            .addResource(new TaskResource(DAO))
             .build();
     private Task task;
 

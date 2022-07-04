@@ -2,18 +2,24 @@ package com.tasks.app.resources;
 
 import com.google.inject.Inject;
 import com.tasks.app.db.TaskDAO;
+import com.tasks.app.db.TaskService;
 import com.tasks.app.entity.Task;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 @Path("/tasks")
 public class TaskResource {
 
+    private final TaskDAO taskDAO;
+    private final TaskService taskService;
+
     @Inject
-    public TaskDAO taskDAO;
+    public TaskResource(TaskDAO taskDAO){
+        this.taskDAO = taskDAO;
+        taskService = new TaskService(taskDAO);
+    }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -30,26 +36,19 @@ public class TaskResource {
 
     @POST
     public void insertTask(Task task) {
-        if (task.getId().isEmpty()) {
-            task.setId(UUID.randomUUID().toString());
-            taskDAO.insertTask(task);
-        } else {
-            taskDAO.updateTask(task, task.getId());
-        }
+       taskService.insertTask(task);
     }
 
     @PUT
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     public Optional<Task> updateTaskById(@PathParam("id") String id, Task task) {
-        taskDAO.updateTask(task, id);
-        return taskDAO.findTaskById(id);
+        return taskService.updateTask(task,id);
     }
 
     @DELETE
     @Path("/{id}")
-    public String deleteTaskById(@PathParam("id") String id) {
+    public void deleteTaskById(@PathParam("id") String id) {
         taskDAO.deleteTask(id);
-        return "Task is removed successfully!";
     }
 }
