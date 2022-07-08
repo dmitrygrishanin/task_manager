@@ -1,7 +1,6 @@
 package com.tasks.app.resources;
 
 import com.google.inject.Inject;
-import com.tasks.app.db.TaskDAO;
 import com.tasks.app.db.TaskService;
 import com.tasks.app.entity.Task;
 import javax.ws.rs.*;
@@ -11,27 +10,24 @@ import java.util.Optional;
 
 @Path("/tasks")
 public class TaskResource {
-
-    private final TaskDAO taskDAO;
     private final TaskService taskService;
 
     @Inject
-    public TaskResource(TaskDAO taskDAO){
-        this.taskDAO = taskDAO;
-        taskService = new TaskService(taskDAO);
+    public TaskResource(TaskService taskService){
+        this.taskService = taskService;
     }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public List<Task> listOfTasks() {
-        return taskDAO.getAllTasks();
+        return taskService.listOfTasks();
     }
 
     @GET
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Optional<Task> getTaskById(@PathParam("id") String id) {
-        return taskDAO.findTaskById(id);
+    public Task findTaskById(@PathParam("id") String id) {
+        return taskService.findTaskById(id).orElseThrow(() -> new WebApplicationException("Task not found", 404));
     }
 
     @POST
@@ -49,6 +45,6 @@ public class TaskResource {
     @DELETE
     @Path("/{id}")
     public void deleteTaskById(@PathParam("id") String id) {
-        taskDAO.deleteTask(id);
+        taskService.deleteTask(id);
     }
 }

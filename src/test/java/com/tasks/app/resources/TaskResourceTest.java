@@ -1,6 +1,7 @@
 package com.tasks.app.resources;
 
 import com.tasks.app.db.TaskDAO;
+import com.tasks.app.db.TaskService;
 import com.tasks.app.entity.Task;
 import io.dropwizard.testing.junit5.DropwizardExtensionsSupport;
 import io.dropwizard.testing.junit5.ResourceExtension;
@@ -16,8 +17,9 @@ import static org.mockito.Mockito.*;
 @ExtendWith(DropwizardExtensionsSupport.class)
 public class TaskResourceTest {
     private static final TaskDAO DAO = mock(TaskDAO.class);
+    private static final TaskService taskService = mock(TaskService.class);
     private static final ResourceExtension EXT = ResourceExtension.builder()
-            .addResource(new TaskResource(DAO))
+            .addResource(new TaskResource(taskService))
             .build();
     private Task task;
 

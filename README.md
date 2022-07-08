@@ -2,6 +2,7 @@
 Before start make sure:
  - docker application is running 
  - postgreSQL server is running
+ - redis is running
 
 #Building the application
 Execute the following command to build and package the application in a jar file:
