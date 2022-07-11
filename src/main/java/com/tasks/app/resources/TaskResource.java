@@ -6,7 +6,6 @@ import com.tasks.app.entity.Task;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
-import java.util.Optional;
 
 @Path("/tasks")
 public class TaskResource {
@@ -38,8 +37,8 @@ public class TaskResource {
     @PUT
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Optional<Task> updateTaskById(@PathParam("id") String id, Task task) {
-        return taskService.updateTask(task,id);
+    public void updateTaskById(@PathParam("id") String id, Task task) {
+        taskService.updateTask(task,id);
     }
 
     @DELETE

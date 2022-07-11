@@ -18,9 +18,9 @@ public class TaskService {
     }
 
     public List<Task> listOfTasks() {
-        Optional<List<Task>> cachedTasks = cacheManager.getAllTasksFromCache();
-        if (cachedTasks.isPresent()) {
-            return cachedTasks.get();
+        List<Task> cachedTasks = cacheManager.getAllTasksFromCache();
+        if (!cachedTasks.isEmpty()) {
+            return cachedTasks;
         } else {
             List<Task> tasks = taskDAO.getAllTasks();
             cacheManager.setAllTasksToCache(tasks);
@@ -34,29 +34,29 @@ public class TaskService {
             return cachedTask;
         } else {
             Optional<Task> task = taskDAO.findTaskById(id);
-            task.ifPresent(value -> cacheManager.setTaskToCache(value.getId(), value));
+            task.ifPresent(cacheManager::setOneTaskToCache);
             return task;
         }
     }
 
-    public Optional<Task> updateTask(Task task, String id) {
+    public void updateTask(Task task, String id) {
         taskDAO.updateTask(task, id);
-        cacheManager.clearCache();
-        return taskDAO.findTaskById(id);
+        cacheManager.updateTask(task, id);
     }
 
     public void insertTask(Task task) {
         if (task.getId() == null) {
-            task.setId(UUID.randomUUID().toString());
+            String id = UUID.randomUUID().toString();
+            task.setId(id);
             taskDAO.insertTask(task);
-            cacheManager.clearCache();
+            cacheManager.setOneTaskToCache(task);
         } else {
-            taskDAO.updateTask(task, task.getId());
+            updateTask(task, task.getId());
         }
     }
 
     public void deleteTask(String id) {
         taskDAO.deleteTask(id);
-        cacheManager.clearCache();
+        cacheManager.deleteTaskFromCache(id);
     }
 }

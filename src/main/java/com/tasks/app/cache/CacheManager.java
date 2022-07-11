@@ -1,55 +1,73 @@
 package com.tasks.app.cache;
 
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import com.google.inject.Inject;
 import com.tasks.app.entity.Task;
 import redis.clients.jedis.Jedis;
-import java.lang.reflect.Type;
-import java.util.List;
-import java.util.Optional;
+import redis.clients.jedis.params.SetParams;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class CacheManager {
     private final Jedis jedis;
     private final Gson gson = new Gson();
-    private static final String ALL_TASKS = "all_tasks";
+    private static final long EXPIRE_TIME_SECONDS = 300;
+    private static final String ALL_TASKS_PATTERN = "all_tasks:";
+    private static final String ONE_TASK_PATTERN = "one_task:";
 
     @Inject
     public CacheManager(Jedis jedis) {
         this.jedis = jedis;
     }
 
-    public Optional<Task> getTaskFromCache(String id){
-        if (isTaskCached(id)) {
-            String json = jedis.get(id);
-            return Optional.ofNullable(gson.fromJson(json, Task.class));
+    private void setTaskToCache(String key, Task task) {
+        jedis.set(key, gson.toJson(task), new SetParams().ex(EXPIRE_TIME_SECONDS));
+    }
+
+    public void setOneTaskToCache(Task task) {
+        setTaskToCache(ONE_TASK_PATTERN + task.getId(), task);
+    }
+
+    public void setAllTasksToCache(List<Task> tasks) {
+        clearCache();
+        tasks.forEach(task -> setTaskToCache(ALL_TASKS_PATTERN + ONE_TASK_PATTERN + task.getId(), task));
+    }
+
+    public Optional<Task> getTaskFromCache(String id) {
+        String key = getKeyByPattern(id);
+        String json = jedis.get(key);
+        return Optional.ofNullable(gson.fromJson(json, Task.class));
+    }
+
+    public List<Task> getAllTasksFromCache() {
+        Set<String> allTasks = getKeysByPattern(ALL_TASKS_PATTERN);
+        if (!allTasks.isEmpty()) {
+            Set<String> keys = getKeysByPattern(ONE_TASK_PATTERN);
+            return keys.stream().map(key -> getTaskFromCache(key).get()).collect(Collectors.toList());
         }
-        return Optional.empty();
+        return Collections.emptyList();
     }
 
-    public void setTaskToCache(String key, Task task){
-        jedis.set(key, gson.toJson(task));
+    public void deleteTaskFromCache(String id) {
+        String key = getKeyByPattern(id);
+        jedis.del(key);
     }
 
-    public boolean isTaskCached(String id){
-        return jedis.exists(id);
+    public void updateTask(Task task, String id) {
+        task.setId(id);
+        String key = getKeyByPattern(id);
+        setTaskToCache(key, task);
     }
 
-    public Optional<List<Task>> getAllTasksFromCache(){
-        if (jedis.exists(ALL_TASKS)) {
-            String json = jedis.get(ALL_TASKS);
-            Type listType = new TypeToken<List<Task>>() {
-            }.getType();
-            return Optional.ofNullable(gson.fromJson(json, listType));
-        }
-        return Optional.empty();
+    private Set<String> getKeysByPattern(String pattern) {
+        return jedis.keys("*" + pattern + "*");
     }
 
-    public void setAllTasksToCache(List<Task> tasks){
-        jedis.set(ALL_TASKS, gson.toJson(tasks));
+    private String getKeyByPattern(String pattern) {
+        return getKeysByPattern(pattern).stream().findFirst().get();
     }
 
-    public void clearCache(){
+    private void clearCache() {
         jedis.flushDB();
     }
 }

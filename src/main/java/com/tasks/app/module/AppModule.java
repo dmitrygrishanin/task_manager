@@ -28,7 +28,7 @@ public class AppModule extends AbstractModule  {
     @Provides
     @Singleton
     public Jedis prepareJedis() {
-        JedisPool jedisPool = new JedisPool(new JedisPoolConfig(), "localhost", 6379, 5);
+        JedisPool jedisPool = new JedisPool(new JedisPoolConfig(), "localhost", 6379);
         return jedisPool.getResource();
     }
 
