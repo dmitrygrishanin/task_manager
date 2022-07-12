@@ -2,6 +2,8 @@ package com.tasks.app.module;
 
 import com.google.inject.*;
 import com.tasks.app.Configuration;
+import com.tasks.app.Interceptor.Cacheable;
+import com.tasks.app.Interceptor.CacheTask;
 import com.tasks.app.cache.CacheManager;
 import com.tasks.app.db.TaskDAO;
 import com.tasks.app.db.TaskService;
@@ -12,10 +14,17 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
+import static com.google.inject.matcher.Matchers.annotatedWith;
+import static com.google.inject.matcher.Matchers.any;
+
 public class AppModule extends AbstractModule  {
 
     @Override
-    protected void configure() {}
+    protected void configure() {
+           bindInterceptor(any(),
+                annotatedWith(Cacheable.class),
+                new CacheTask(getProvider(CacheManager.class), getProvider(TaskDAO.class)));
+    }
 
     @Provides
     @Singleton

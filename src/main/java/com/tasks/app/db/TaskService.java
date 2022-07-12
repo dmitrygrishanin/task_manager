@@ -3,6 +3,7 @@ package com.tasks.app.db;
 import com.google.inject.Inject;
 import com.tasks.app.cache.CacheManager;
 import com.tasks.app.entity.Task;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -17,31 +18,18 @@ public class TaskService {
         this.cacheManager = cacheManager;
     }
 
-    public List<Task> listOfTasks() {
-        List<Task> cachedTasks = cacheManager.getAllTasksFromCache();
-        if (!cachedTasks.isEmpty()) {
-            return cachedTasks;
-        } else {
-            List<Task> tasks = taskDAO.getAllTasks();
-            cacheManager.setAllTasksToCache(tasks);
-            return tasks;
-        }
+    public List<Task> findAllTasks() {
+        return cacheManager.getTasksFromCache();
     }
 
     public Optional<Task> findTaskById(String id) {
-        Optional<Task> cachedTask = cacheManager.getTaskFromCache(id);
-        if (cachedTask.isPresent()) {
-            return cachedTask;
-        } else {
-            Optional<Task> task = taskDAO.findTaskById(id);
-            task.ifPresent(cacheManager::setOneTaskToCache);
-            return task;
-        }
+        return cacheManager.getTaskFromCache(id);
     }
 
     public void updateTask(Task task, String id) {
         taskDAO.updateTask(task, id);
-        cacheManager.updateTask(task, id);
+        task.setId(id);
+        cacheManager.setTaskToCache(task);
     }
 
     public void insertTask(Task task) {
@@ -49,7 +37,7 @@ public class TaskService {
             String id = UUID.randomUUID().toString();
             task.setId(id);
             taskDAO.insertTask(task);
-            cacheManager.setOneTaskToCache(task);
+            cacheManager.setTaskToCache(task);
         } else {
             updateTask(task, task.getId());
         }
