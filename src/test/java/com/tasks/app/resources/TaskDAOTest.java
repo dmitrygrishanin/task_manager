@@ -1,48 +1,18 @@
 package com.tasks.app.resources;
 
-import com.codahale.metrics.MetricRegistry;
-import com.tasks.app.db.TaskDAO;
 import com.tasks.app.entity.Task;
-import io.dropwizard.db.ManagedPooledDataSource;
-import org.apache.tomcat.jdbc.pool.PoolProperties;
-import org.jdbi.v3.core.Jdbi;
-import org.jdbi.v3.sqlobject.SqlObjectPlugin;
 import org.junit.jupiter.api.*;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils;
-import javax.sql.DataSource;
+
 import java.util.*;
 
 @Testcontainers
-public class TaskDAOTest {
-    static DataSource datasource;
-    static Jdbi jdbi;
-    private Task task;
-    private static TaskDAO dao;
-    Random random = new Random();
-    String[] status = {"new", "in progress", "closed"};
-
-    @Container
-    public static PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>("postgres:9.6.12")
-            .withInitScript("db.sql");
-
-    @BeforeAll
-    static void init() {
-        PoolProperties properties = new PoolProperties();
-        properties.setUrl(postgreSQLContainer.getJdbcUrl());
-        properties.setUsername(postgreSQLContainer.getUsername());
-        properties.setPassword(postgreSQLContainer.getPassword());
-        datasource = new ManagedPooledDataSource(properties, new MetricRegistry());
-        jdbi = Jdbi.create(datasource);
-        jdbi.installPlugin(new SqlObjectPlugin());
-        dao = jdbi.onDemand(TaskDAO.class);
-    }
+public class TaskDAOTest extends BaseTest {
 
     @Test
+    @DisplayName("Verify task entity")
     public void VerifyTask() {
-        task = new Task();
+        Task task = new Task();
         task.setId("3");
         task.setTask("Some task description");
         task.setPriority(5);
@@ -54,46 +24,40 @@ public class TaskDAOTest {
     }
 
     @Test
+    @DisplayName("Insert a new task and find it by id")
     public void insertTaskAndFindById() {
-        task = getGeneratedTask();
-        dao.insertTask(task);
-        Optional<Task> receivedTask = dao.findTaskById(task.getId());
-        Assertions.assertTrue(receivedTask.isPresent());
-        Assertions.assertEquals(receivedTask.get().getId(), task.getId());
-        Assertions.assertEquals(receivedTask.get().getTask(), task.getTask());
-        Assertions.assertEquals(receivedTask.get().getPriority(), task.getPriority());
-        Assertions.assertEquals(receivedTask.get().getStatus(), task.getStatus());
+        Task task = getGeneratedTask();
+        taskDAO.insertTask(task);
+        Optional<Task> receivedTask = taskDAO.findTaskById(task.getId());
+        Assertions.assertTrue(receivedTask.isPresent(), "Inserted task is absent");
+        Assertions.assertEquals(receivedTask.get().getId(), task.getId(), "Id of received task is differs from expected.");
+        Assertions.assertEquals(receivedTask.get().getTask(), task.getTask(), "Id of received task is differs from inserted task");
+        Assertions.assertEquals(receivedTask.get().getPriority(), task.getPriority(), "Priority of received task is differs from inserted task");
+        Assertions.assertEquals(receivedTask.get().getStatus(), task.getStatus(), "Status of received task is differs from inserted task");
     }
 
     @Test
+    @DisplayName("Update the task and verify updated values")
     public void updateTask() {
         Task task = getGeneratedTask();
         Task newTask = getGeneratedTask();
-        dao.insertTask(task);
-        dao.updateTask(newTask, task.getId());
-        Optional<Task> receivedTask = dao.findTaskById(task.getId());
-        Assertions.assertTrue(receivedTask.isPresent());
-        Assertions.assertEquals(receivedTask.get().getId(), task.getId());
-        Assertions.assertEquals(receivedTask.get().getTask(), newTask.getTask());
-        Assertions.assertEquals(receivedTask.get().getPriority(), newTask.getPriority());
-        Assertions.assertEquals(receivedTask.get().getStatus(), newTask.getStatus());
+        taskDAO.insertTask(task);
+        taskDAO.updateTask(newTask, task.getId());
+        Optional<Task> receivedTask = taskDAO.findTaskById(task.getId());
+        Assertions.assertTrue(receivedTask.isPresent(), "Task is not found after update");
+        Assertions.assertEquals(receivedTask.get().getId(), task.getId(), "Id of task shouldn't be updated");
+        Assertions.assertEquals(receivedTask.get().getTask(), newTask.getTask(), "Task value is not updated");
+        Assertions.assertEquals(receivedTask.get().getPriority(), newTask.getPriority(), "Priority of task is not updated");
+        Assertions.assertEquals(receivedTask.get().getStatus(), newTask.getStatus(), "Status of task is not updated");
     }
 
     @Test
+    @DisplayName("Delete the task and verify task is absent")
     public void deleteTask() {
-        task = getGeneratedTask();
-        dao.insertTask(task);
-        dao.deleteTask(task.getId());
-        Optional<Task> receivedTask = dao.findTaskById(task.getId());
-        Assertions.assertFalse(receivedTask.isPresent());
-    }
-
-    private Task getGeneratedTask() {
-        task = new Task();
-        task.setId(UUID.randomUUID().toString());
-        task.setTask(RandomStringUtils.randomAlphanumeric(17));
-        task.setPriority(random.nextInt(5 - 1) + 1);
-        task.setStatus(status[random.nextInt(status.length)]);
-        return task;
+        Task task = getGeneratedTask();
+        taskDAO.insertTask(task);
+        taskDAO.deleteTask(task.getId());
+        Optional<Task> receivedTask = taskDAO.findTaskById(task.getId());
+        Assertions.assertFalse(receivedTask.isPresent(), "Task should be absent");
     }
 }

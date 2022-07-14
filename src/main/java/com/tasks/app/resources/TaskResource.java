@@ -1,10 +1,8 @@
 package com.tasks.app.resources;
-
 import com.google.inject.Inject;
 import com.tasks.app.Interceptor.Cacheable;
 import com.tasks.app.db.TaskService;
 import com.tasks.app.entity.Task;
-
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import java.util.List;

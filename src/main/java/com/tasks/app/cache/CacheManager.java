@@ -42,4 +42,8 @@ public class CacheManager {
     public void deleteTaskFromCache(String id) {
         jedis.del(id);
     }
+
+    public void clearCache(){
+        jedis.flushDB();
+    }
 }

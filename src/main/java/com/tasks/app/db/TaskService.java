@@ -3,7 +3,6 @@ package com.tasks.app.db;
 import com.google.inject.Inject;
 import com.tasks.app.cache.CacheManager;
 import com.tasks.app.entity.Task;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;

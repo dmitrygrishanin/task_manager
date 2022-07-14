@@ -26,5 +26,5 @@ public interface TaskDAO {
     Optional<Task> findTaskById(@Bind("id") String id);
 
     @SqlQuery("select * from task_review")
-    List<Task> getAllTasks();
+    List<Task> findAllTasks();
 }
