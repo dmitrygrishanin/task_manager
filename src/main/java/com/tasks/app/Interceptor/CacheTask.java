@@ -19,14 +19,10 @@ public class CacheTask implements MethodInterceptor {
 
     @Override
     public Object invoke(MethodInvocation methodInvocation) throws Throwable {
-        interceptor();
-        return methodInvocation.proceed();
-    }
-
-    public void interceptor(){
         if (cacheManager.get().getTasksFromCache().isEmpty()) {
             List<Task> tasks = taskDAO.get().findAllTasks();
             cacheManager.get().setTasksToCache(tasks);
         }
+        return methodInvocation.proceed();
     }
 }
