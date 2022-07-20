@@ -14,13 +14,13 @@ import java.util.Optional;
 @RegisterRowMapper(TaskDAOMapper.class)
 public interface TaskDAO {
     @SqlUpdate("delete from task_review where id = :id")
-    void deleteTask(@Bind("id") String id);
+    int deleteTask(@Bind("id") String id);
 
     @SqlUpdate("update task_review set task = :task, status = :status, priority = :priority where id = :id")
-    void updateTask(@BindBean Task task, @Bind("id") String id);
+    int updateTask(@BindBean Task task, @Bind("id") String id);
 
     @SqlUpdate("insert into task_review (id, task, status, priority) values (:id, :task, :status, :priority)")
-    void insertTask(@BindBean Task task);
+    int insertTask(@BindBean Task task);
 
     @SqlQuery("select * from task_review where id = :id")
     Optional<Task> findTaskById(@Bind("id") String id);

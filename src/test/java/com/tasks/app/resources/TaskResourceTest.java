@@ -1,11 +1,17 @@
 package com.tasks.app.resources;
 
+import com.tasks.app.db.TaskService;
 import com.tasks.app.entity.Task;
+import com.tasks.app.utils.Utils;
 import io.dropwizard.testing.junit5.DropwizardExtensionsSupport;
-import org.junit.jupiter.api.*;
+import io.dropwizard.testing.junit5.ResourceExtension;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
@@ -14,72 +20,84 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-@Testcontainers
+import static org.mockito.Mockito.*;
+
 @ExtendWith(DropwizardExtensionsSupport.class)
-public class TaskResourceTest extends BaseTest {
+public class TaskResourceTest {
+    private static final TaskService taskService = mock(TaskService.class);
+    public static final ResourceExtension resourceExtension = ResourceExtension.builder()
+            .addResource(new TaskResource(taskService))
+            .build();
+    private static Task task;
+
+    @BeforeEach
+    public void beforeEach() {
+        task = Utils.getGeneratedTask();
+    }
 
     @Test
     @DisplayName("Verify task is found by id")
     void getTaskSuccess() {
-        Task task = getGeneratedTask();
-        cacheManager.setTaskToCache(task);
-        Task received_task = resourceExtension.target("/tasks/"+task.getId()+"").request().get(Task.class);
-        Assertions.assertEquals(task.getId(), received_task.getId(), "Wrong task id.");
+        when(taskService.findTaskById(anyString())).thenReturn(Optional.of(task));
+        Task found = resourceExtension.target("/tasks/" + task.getId() + "").request().get(Task.class);
+        Assertions.assertEquals(found.getId(), task.getId());
+        verify(taskService).findTaskById(task.getId());
     }
 
     @Test
-    @DisplayName("Verify 'Not found' response if task is absent")
+    @DisplayName("Verify task is found by id")
     void getTaskNotFound() {
-        Response response = resourceExtension.target("/tasks/invalidUUID").request().get();
-        Assertions.assertEquals(Response.Status.NOT_FOUND.getStatusCode(), response.getStatusInfo().getStatusCode(), "Wrong response status code.");
+        when(taskService.findTaskById(anyString())).thenReturn(Optional.empty());
+        final Response response = resourceExtension.target("/tasks/" + task.getId() + "").request().get();
+        Assertions.assertEquals(response.getStatusInfo().getStatusCode(), Response.Status.NOT_FOUND.getStatusCode());
+        verify(taskService).findTaskById(task.getId());
     }
 
     @Test
-    @DisplayName("Get all tasks and verify them")
-    void getAllTasks() {
-        List<Task> tasks = new ArrayList<Task>();
-        tasks.add(getGeneratedTask());
-        tasks.add(getGeneratedTask());
-        cacheManager.setTasksToCache(tasks);
-        List<Task> received_tasks = resourceExtension.target("/tasks").request().get(new GenericType<>(){});
-        Assertions.assertEquals(tasks, received_tasks, "Posted tasks and received tasks are differ");
+    @DisplayName("")
+    void getAllTaskSuccess() {
+        List<Task> listOfTasks = new ArrayList<>();
+        listOfTasks.add(Utils.getGeneratedTask());
+        listOfTasks.add(Utils.getGeneratedTask());
+        when(taskService.findAllTasks()).thenReturn(listOfTasks);
+        List<Task> received_tasks = resourceExtension.target("/tasks/").request().get(new GenericType<>() {
+        });
+        Assertions.assertEquals(listOfTasks, received_tasks, "Posted tasks and received tasks are differ");
+        verify(taskService).findAllTasks();
     }
 
-    @Test
     @DisplayName("Post a new task and verify it")
-    public void postNewTask(){
-        Task task = getGeneratedTask();
-        task.setId(null);
-        resourceExtension.target("/tasks").request().post(Entity.entity(task, MediaType.APPLICATION_JSON));
-        Optional<Task> received_task = taskDAO.findAllTasks().stream().findFirst();
-        Assertions.assertTrue(received_task.isPresent(), "Task is absent");
-        Assertions.assertEquals(received_task.get().getTask(), task.getTask(), "Task value of received task is differ from posted value");
-        Assertions.assertEquals(received_task.get().getStatus(), task.getStatus(), "Status value of received task is differ from posted value");
-        Assertions.assertEquals(received_task.get().getPriority(), task.getPriority(), "Priority value of received task is differ from posted value");
+    @Test
+    public void postNewTask() {
+        task = Utils.getGeneratedTask();
+        when(taskService.insertTask(any(Task.class))).thenReturn(task);
+        Response response =
+                resourceExtension.target("/tasks").request(MediaType.APPLICATION_JSON_TYPE).post(Entity.entity(task,
+                        MediaType.APPLICATION_JSON_TYPE));
+        verify(taskService).insertTask(task);
+        Assertions.assertEquals(response.getStatusInfo(), Response.Status.OK);
+        Assertions.assertEquals(response.readEntity(Task.class), task);
     }
 
-    @Test
     @DisplayName("Update task and verify it")
+    @Test
     public void updateTask(){
-        Task task = getGeneratedTask();
-        Task newTask = getGeneratedTask();
-        taskDAO.insertTask(task);
-        resourceExtension.target("/tasks/"+task.getId()+"").request().put(Entity.entity(newTask, MediaType.APPLICATION_JSON));
-        Optional<Task> received_task = taskDAO.findTaskById(task.getId());
-        Assertions.assertTrue(received_task.isPresent(), "Updated task is absent");
-        Assertions.assertEquals(task.getId(), received_task.get().getId(), "Id of updated task shouldn't be changed");
-        Assertions.assertEquals(newTask.getTask(), received_task.get().getTask(), "Task value is not updated");
-        Assertions.assertEquals(newTask.getStatus(), received_task.get().getStatus(), "Status value is not updated");
-        Assertions.assertEquals(newTask.getPriority(), received_task.get().getPriority(),  "Priority value is not updated");
+        Task newTask = Utils.getGeneratedTask();
+        newTask.setId(task.getId());
+        when(taskService.updateTask(any(Task.class), anyString())).thenReturn(newTask);
+        Response response = resourceExtension.target("/tasks/"+task.getId()+"").request(MediaType.APPLICATION_JSON_TYPE).put(Entity.entity(newTask, MediaType.APPLICATION_JSON_TYPE));
+        verify(taskService).updateTask(newTask, task.getId());
+        Assertions.assertEquals(response.getStatusInfo(), Response.Status.OK);
+        Assertions.assertEquals(response.readEntity(Task.class), newTask);
     }
 
     @Test
     @DisplayName("Delete task and verify it absent")
     public void deleteTask(){
-        Task task = getGeneratedTask();
-        taskDAO.insertTask(task);
-        resourceExtension.target("/tasks/"+task.getId()+"").request().delete();
-        Optional<Task> received_task = taskDAO.findTaskById(task.getId());
-        Assertions.assertFalse(received_task.isPresent(), "Updated task is absent");
+        when(taskService.deleteTask(anyString())).thenReturn(true);
+        Response response = resourceExtension.target("/tasks/"+task.getId()+"").request().delete();
+        verify(taskService).deleteTask(task.getId());
+        Assertions.assertEquals(response.getStatusInfo(), Response.Status.OK);
+        Assertions.assertEquals(response.readEntity(Boolean.class), true);
     }
 }

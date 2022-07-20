@@ -1,26 +1,40 @@
 package com.tasks.app.resources;
 
+import com.tasks.app.cache.CacheManager;
 import com.tasks.app.entity.Task;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import com.tasks.app.utils.Utils;
+import org.junit.jupiter.api.*;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-
+import redis.clients.jedis.Jedis;
 import java.util.*;
 
 @Testcontainers
-public class TaskCacheTest extends BaseTest {
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+public class TaskCacheTest {
+    private static CacheManager cacheManager;
+    private static Task task;
+
+    @Container
+    public static GenericContainer redis = new GenericContainer("redis:3.0.6")
+            .withExposedPorts(6379);
+
+    @BeforeAll
+    public void beforeAll() {
+        Jedis jedis = new Jedis(redis.getHost(), redis.getMappedPort(6379));
+        cacheManager = new CacheManager(jedis);
+    }
 
     @BeforeEach
     public void clearCache(){
         cacheManager.clearCache();
+        task = Utils.getGeneratedTask();
     }
 
     @Test
     @DisplayName("Add task to cache and find it by id")
     public void addTaskToCacheAndFindItById() {
-        Task task = getGeneratedTask();
         cacheManager.setTaskToCache(task);
         Optional<Task> received_task = cacheManager.getTaskFromCache(task.getId());
         Assertions.assertTrue(received_task.isPresent(), "Task should be present in cache");
@@ -31,8 +45,8 @@ public class TaskCacheTest extends BaseTest {
     @DisplayName("Add multiple tasks to cache and receive them")
     public void addMultipleTasksToCache() {
         List<Task> tasks = new ArrayList<>();
-        tasks.add(getGeneratedTask());
-        tasks.add(getGeneratedTask());
+        tasks.add(Utils.getGeneratedTask());
+        tasks.add(Utils.getGeneratedTask());
         cacheManager.setTasksToCache(tasks);
         List<Task> received_tasks = cacheManager.getTasksFromCache();
         Collections.sort(tasks);
@@ -44,7 +58,6 @@ public class TaskCacheTest extends BaseTest {
     @Test
     @DisplayName("Add task to cache and delete it")
     public void addTaskToCacheAndDeleteIt() {
-        Task task = getGeneratedTask();
         cacheManager.setTaskToCache(task);
         Optional<Task> received_task = cacheManager.getTaskFromCache(task.getId());
         Assertions.assertTrue(received_task.isPresent(), "Task should be present in cache");
